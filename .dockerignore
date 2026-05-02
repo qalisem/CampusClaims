@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.idea
+.vscode
+.DS_Store
+npm-debug.log*
+.env*
+!.env.example
+supabase/volumes/db/data
+supabase/volumes/storage
+supabase/volumes/functions
+supabase/.env
+tsconfig.tsbuildinfo

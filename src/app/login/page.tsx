@@ -1,70 +1,97 @@
 'use client';
-import {useState} from "react";
-import Image from "next/image";
-import logo from "@/../public/logo.png";
-import {createClient} from "@/utils/supabase/client";
-import {useRouter} from "next/navigation";
+import { useState } from 'react';
+import Image from 'next/image';
+import logo from '@/../public/logo.png';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginPage() {
-    const [password, setPassword] = useState("");
-    const [email, setEmail] = useState("");
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
-
-    const poo = async (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const supabase = await createClient();
-        const data = {email: email, password: password};
-        const { error } = await supabase.auth.signInWithPassword(data)
-        if (error) {
-            alert('RUH ROH!')
-            return error;
+        setError(null);
+        setSubmitting(true);
+        const supabase = createClient();
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        setSubmitting(false);
+        if (signInError) {
+            setError("That email and password didn't match. Try again.");
+            return;
         }
-        router.push("/explore");
-    }
-
+        router.push('/explore');
+    };
 
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-          <div className="bg-white p-10 rounded-lg shadow-lg w-full max-w-md text-center">
-              <div className="flex justify-center mb-4">
-                  <Image src={logo} alt="CampusClaims Logo" width={150} height={150} />
-              </div>
-              <h2 className="text-2xl font-bold text-[#2563eb] mb-6">{"Login To Your Account"}</h2>
-              <form onSubmit={poo}>
-                  <div className="mb-4 text-left">
-                      <label className="block text-sm font-medium text-gray-700">Email</label>
-                      <input
-                          type="email"
-                          className="mt-1 w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black"
-                          placeholder="you@example.com"
-                          onChange={(e) => setEmail(e.target.value)}
-                      />
-                  </div>
+        <div className="min-h-[calc(100dvh-64px)] flex items-center justify-center px-4 py-10">
+            <div className="cc-card w-full max-w-md p-8 sm:p-10">
+                <div className="flex justify-center mb-5">
+                    <Image src={logo} alt="" width={84} height={84} priority />
+                </div>
+                <h1 className="text-2xl font-bold text-center text-ink-900">Welcome back</h1>
+                <p className="text-center text-sm text-ink-500 mt-1 mb-6">
+                    Log in to your CampusClaims account.
+                </p>
 
-                  <div className="mb-6 text-left">
-                      <label className="block text-sm font-medium text-gray-700">Password</label>
-                      <input
-                          type="password"
-                          className="mt-1 w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black"
-                          placeholder="••••••••"
-                          onChange={(e) => {setPassword(e.target.value)}}
-                      />
-                  </div>
+                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                    <div>
+                        <label htmlFor="email" className="cc-label">Email</label>
+                        <input
+                            id="email"
+                            type="email"
+                            autoComplete="email"
+                            required
+                            className="cc-input"
+                            placeholder="you@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                    </div>
 
-                  <button
-                      type="submit"
-                      className="w-full bg-[#2563eb] text-white py-2 px-4 rounded hover:bg-blue-600 cursor-pointer"
-                  >
-                      Login
-                  </button>
-              </form>
+                    <div>
+                        <label htmlFor="password" className="cc-label">Password</label>
+                        <input
+                            id="password"
+                            type="password"
+                            autoComplete="current-password"
+                            required
+                            className="cc-input"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                    </div>
 
-              <p className="mt-4 text-sm text-gray-600">
-                  Don&apos;t have an account?{' '}
-                  <a href="/signup" className="text-blue-600 hover:underline">Sign up</a>
-              </p>
-          </div>
-      </div>
-  );
+                    {error && (
+                        <p
+                            role="alert"
+                            className="text-sm text-danger-700 bg-danger-50 border border-danger-100 rounded-lg px-3 py-2"
+                        >
+                            {error}
+                        </p>
+                    )}
+
+                    <button
+                        type="submit"
+                        disabled={submitting}
+                        className="cc-btn cc-btn-primary w-full !h-11"
+                    >
+                        {submitting ? 'Logging in…' : 'Log in'}
+                    </button>
+                </form>
+
+                <p className="mt-6 text-center text-sm text-ink-500">
+                    Don&apos;t have an account?{' '}
+                    <Link href="/signup" className="font-semibold text-brand-700 hover:underline">
+                        Sign up
+                    </Link>
+                </p>
+            </div>
+        </div>
+    );
 }

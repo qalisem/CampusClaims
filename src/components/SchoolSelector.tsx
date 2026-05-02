@@ -1,44 +1,63 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 
-type MapProps = {
+type Props = {
     onChange: (value: number) => void;
 };
 
-export default function SchoolSelector(props:MapProps) {
-    const schools = ['TMU', 'UTM',];
+const SCHOOLS = [
+    { code: 'TMU', name: 'Toronto Metropolitan' },
+    { code: 'UTM', name: 'UofT Mississauga' },
+];
+
+export default function SchoolSelector({ onChange }: Props) {
     const [index, setIndex] = useState(0);
 
-    const prevSchool = () => {
-        const newIndex = (index - 1 + schools.length) % schools.length;
-        setIndex(newIndex);
-        props.onChange(newIndex);
+    const select = (i: number) => {
+        setIndex(i);
+        onChange(i);
     };
-
-    const nextSchool = () => {
-        const newIndex = (index + 1) % schools.length;
-        setIndex(newIndex);
-        props.onChange(newIndex);
-    };
-
 
     return (
-        <div className='flex items-center justify-center gap-14 text-2xl font-bold text-blue-600'>
-            <button
-            onClick={prevSchool}
-            className="bg-blue-600 hover:bg-blue-800 text-white rounded-full w-10 h-10 flex items-center justify-center">
-            <ChevronLeftIcon className="w-5 h-5" />
-            </button>
-
-            <h1>{schools[index]}</h1>
-
-            <button
-            onClick={nextSchool}
-            className="bg-blue-600 hover:bg-blue-800 text-white rounded-full w-10 h-10 flex items-center justify-center">
-            <ChevronRightIcon className="w-5 h-5" />
-            </button>
+        <div
+            role="tablist"
+            aria-label="Select campus"
+            className="relative mx-auto w-full max-w-md p-1 rounded-full bg-surface-muted border border-line flex"
+        >
+            <span
+                aria-hidden
+                className={[
+                    'absolute top-1 bottom-1 left-1 rounded-full bg-brand-600 shadow-sm transition-all duration-200 ease-out',
+                    'w-[calc(50%-0.25rem)]',
+                    index === 0 ? 'translate-x-0' : 'translate-x-full',
+                ].join(' ')}
+            />
+            {SCHOOLS.map((s, i) => {
+                const active = index === i;
+                return (
+                    <button
+                        key={s.code}
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() => select(i)}
+                        className={[
+                            'relative z-10 flex-1 py-2.5 px-3 rounded-full text-sm font-semibold transition-colors',
+                            active ? 'text-white' : 'text-ink-700 hover:text-ink-900',
+                        ].join(' ')}
+                    >
+                        <span className="block leading-tight">{s.code}</span>
+                        <span
+                            className={[
+                                'block text-[11px] font-medium leading-tight',
+                                active ? 'text-white/85' : 'text-ink-500',
+                            ].join(' ')}
+                        >
+                            {s.name}
+                        </span>
+                    </button>
+                );
+            })}
         </div>
     );
 }

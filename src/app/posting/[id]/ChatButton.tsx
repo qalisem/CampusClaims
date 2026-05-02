@@ -4,9 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import convoMaker from '@/utils/ConvoMaker';
+import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 
 export default function ChatButton({ recipientId }: { recipientId: string }) {
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -18,14 +20,22 @@ export default function ChatButton({ recipientId }: { recipientId: string }) {
         fetchUser();
     }, []);
 
-    const handleChat = async () => {
-        if (!currentUserId || !recipientId || currentUserId === recipientId) return;
+    const isOwnPost = currentUserId === recipientId;
+    const notLoggedIn = !currentUserId;
 
+    const handleChat = async () => {
+        if (notLoggedIn) {
+            router.push('/login');
+            return;
+        }
+        if (isOwnPost) return;
+        setBusy(true);
         const convo = await convoMaker(currentUserId, recipientId);
+        setBusy(false);
         if (convo && convo.id) {
             router.push(`/chat/${convo.id}`);
         } else {
-            alert("Failed to create or retrieve conversation.");
+            alert('Failed to create or retrieve conversation.');
         }
     };
 
@@ -33,21 +43,12 @@ export default function ChatButton({ recipientId }: { recipientId: string }) {
         <button
             type="button"
             onClick={handleChat}
-            className="
-                text-white
-                text-base
-                px-4 py-2
-                bg-blue-600
-                rounded-md
-                hover:bg-blue-700
-                focus:ring-2 focus:ring-blue-400
-                transition
-                duration-200
-                ease-in-out
-                shadow-sm
-            "
+            disabled={isOwnPost || busy}
+            className="cc-btn cc-btn-primary !h-11 w-full sm:w-auto"
+            title={isOwnPost ? "This is your own post" : undefined}
         >
-            Message Now!
+            <ChatBubbleLeftRightIcon className="h-5 w-5" />
+            {isOwnPost ? 'Your post' : busy ? 'Opening…' : notLoggedIn ? 'Log in to message' : 'Message poster'}
         </button>
     );
 }

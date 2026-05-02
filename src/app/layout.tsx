@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar"; // <-- ✅ import the Navbar
+import Navbar from "@/components/Navbar";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -14,25 +14,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "Campus Claims",
+    title: "CampusClaims",
     description: "Find your lost items today!",
 };
 
 export default function RootLayout({
-                                       children,
-                                   }: Readonly<{
+    children,
+}: Readonly<{
     children: React.ReactNode;
 }>) {
     return (
         <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Navbar /> {/* ✅ Navbar appears on every page */}
-        <main className="max-w-5xl mx-auto p-6">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-                {children}
-            </div>
-        </main>
-        </body>
+            <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-dvh`}>
+                <Navbar />
+                <main className="min-h-[calc(100dvh-64px)]">{children}</main>
+            </body>
         </html>
     );
 }
