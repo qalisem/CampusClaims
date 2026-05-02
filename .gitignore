@@ -32,6 +32,13 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# Self-hosted Supabase: runtime data only — keep config files tracked
+/supabase/volumes/db/data/
+/supabase/volumes/storage/
+/supabase/volumes/functions/
+/supabase/.env
 
 # vercel
 .vercel
@@ -47,3 +54,10 @@ next-env.d.ts
 .idea/
 
 .env*
+!.env.example
+
+# Self-hosted Supabase: runtime data only — keep config files tracked
+/supabase/volumes/db/data/
+/supabase/volumes/storage/
+/supabase/volumes/functions/
+/supabase/.env

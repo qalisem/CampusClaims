@@ -1,208 +1,207 @@
 'use client';
 
-import {JSX, useEffect, useState} from "react";
-import Image from 'next/image';
-import ChatButton from "@/app/posting/[id]/ChatButton";
-import GalleryImg from "@/app/posting/[id]/GalleryImg";
-import logo from '/public/logo.png';
-import { createClient } from "@/utils/supabase/client";
-import {useParams, useRouter} from "next/navigation";
-
+import { JSX, useEffect, useState } from 'react';
+import ChatButton from '@/app/posting/[id]/ChatButton';
+import GalleryImg from '@/app/posting/[id]/GalleryImg';
+import { createClient } from '@/utils/supabase/client';
+import { useParams, useRouter } from 'next/navigation';
+import {
+    MapPinIcon,
+    CalendarIcon,
+    UserCircleIcon,
+} from '@heroicons/react/24/outline';
 
 export type Post = {
     id: string;
-    user: { id: string, username: string };
+    user: { id: string; username: string };
     post_type: 'lost' | 'found';
     title: string;
     description: string | null;
     location: string | null;
-    event_date: string | null; // ISO string format like "2025-05-19"
+    event_date: string | null;
     images: string[] | null;
-    created_at: string | null; // ISO timestamp
+    created_at: string | null;
 };
 
 function Posting({ id: propId, preview = false }: { id?: string; preview?: boolean }): JSX.Element {
     const params = useParams();
     const id = propId ?? (params?.id as string);
-    console.log("✅ Got post ID:", id);
     const [post, setPost] = useState<Post | null>(null);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const router = useRouter();
 
     useEffect(() => {
-        const res = fetchPost(id, router);
-        res.then((data) => {
-            if (data) {
-                setPost(data);
-            }
+        fetchPost(id, router).then((data) => {
+            if (data) setPost(data);
         });
-    }, [id, router])
+    }, [id, router]);
 
-
-    if (preview && post) {
-        return (
-            <div className="w-full h-[460px] bg-white rounded-2xl shadow-lg hover:shadow-xl
-           transition-transform transition-shadow duration-200 ease-in-out
-           hover:scale-[1.04] cursor-pointer
-           overflow-hidden flex flex-col justify-between p-4 space-y-3">
-                {/* Header */}
-                <div className="flex justify-center items-center">
-                    <h1 className="text-sm font-semibold text-blue-600">{post.title}</h1>
-                </div>
-
-                {/* Image Gallery */}
-                <div className="w-full flex justify-center">
-                    <GalleryImg images={post.images} preview={preview}/>
-                </div>
-
-                {/* Footer */}
-                <div className="w-full flex justify-center">
-                    <div className="space-y-2">
-                        <p className="text-xs text-gray-600 line-clamp-4">
-                            {post.description}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                            Last seen on <span className="font-semibold">{post.event_date}</span>
-                        </p>
-
-                        <h2>Posted by {post.user.username} </h2>
+    if (!post) {
+        if (preview) {
+            return (
+                <div className="cc-card h-[460px] animate-pulse">
+                    <div className="h-2/3 bg-surface-muted rounded-t-2xl" />
+                    <div className="p-4 space-y-3">
+                        <div className="h-4 bg-surface-muted rounded w-3/4" />
+                        <div className="h-3 bg-surface-muted rounded w-full" />
                     </div>
                 </div>
+            );
+        }
+        return (
+            <div className="mx-auto max-w-2xl px-4 py-10">
+                <div className="cc-card p-8 text-center text-ink-500">Loading post…</div>
             </div>
         );
     }
 
-    // 🔹 Full page layout
-    if (post) {
+    const chipClass = post.post_type === 'found' ? 'cc-chip-found' : 'cc-chip-lost';
+
+    if (preview) {
         return (
-            <div className="bg-white border border-gray-200 p-6 rounded-xl max-w-5xl mx-auto space-y-8">
-                {/* Header */}
-                <div className="border rounded-lg border-gray-200 px-4 py-3 bg-gray-50">
-                    <div className="grid grid-cols-3 items-center">
-                        <div className="flex items-center gap-2 justify-start">
-                            <Image src={logo} alt="Location symbol" width={40} height={40}/>
-                            <p className="text-sm text-gray-700 font-medium">{post.location}</p>
-                        </div>
-
-                        <div className="text-center">
-                            <h1 className="text-lg font-semibold text-blue-600">{post.title}</h1>
-                        </div>
-
-                        <div className="flex justify-end items-center">
-                        <span
-                            className="inline-block px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
-                            Posted by {post.user.username}
-                        </span>
-                        </div>
-                    </div>
+            <article
+                className="cc-card h-[460px] flex flex-col overflow-hidden cursor-pointer
+                           transition-shadow transition-transform duration-200 ease-out
+                           hover:shadow-[0_16px_40px_-12px_rgb(15_23_42_/_0.18)] hover:-translate-y-0.5"
+            >
+                {/* Image */}
+                <div className="relative h-56 bg-surface-muted flex items-center justify-center overflow-hidden">
+                    <GalleryImg images={post.images} preview={preview} />
+                    <span className={`cc-chip ${chipClass} absolute top-3 left-3 capitalize`}>
+                        {post.post_type}
+                    </span>
                 </div>
 
                 {/* Body */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                    {/* Image */}
-                    <GalleryImg images={post.images} preview={preview}/>
+                <div className="flex-1 flex flex-col p-4 gap-2 min-h-0">
+                    <h3 className="text-base font-semibold text-ink-900 leading-snug line-clamp-2">
+                        {post.title}
+                    </h3>
 
-                    {/* Details */}
-                    <div className="space-y-4">
-                        <p className="text-sm text-gray-600 font-medium">
-                            Last seen on <span className="font-semibold">{post.event_date}</span>
-                        </p>
-                        {!preview && (
-                            <p className="text-gray-800 leading-relaxed whitespace-pre-line">{post.description}</p>
+                    {post.description && (
+                        <p className="text-sm text-ink-500 line-clamp-3">{post.description}</p>
+                    )}
+
+                    <div className="mt-auto pt-2 border-t border-line space-y-1.5">
+                        {post.location && (
+                            <div className="flex items-center gap-1.5 text-xs text-ink-700">
+                                <MapPinIcon className="h-3.5 w-3.5 text-ink-400" />
+                                <span className="truncate">{post.location}</span>
+                            </div>
                         )}
-                        <ChatButton recipientId={post.user.id} />
+                        {post.event_date && (
+                            <div className="flex items-center gap-1.5 text-xs text-ink-700">
+                                <CalendarIcon className="h-3.5 w-3.5 text-ink-400" />
+                                <span>{post.event_date}</span>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-1.5 text-xs text-ink-500">
+                            <UserCircleIcon className="h-3.5 w-3.5" />
+                            <span>by {post.user.username}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </article>
         );
     }
 
-    return (<div>Uh oh, seems there was a problem</div>);
-}
+    // Full page
+    return (
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8">
+            <article className="cc-card overflow-hidden">
+                {/* Header */}
+                <header className="px-5 sm:px-7 py-4 border-b border-line flex flex-wrap items-center gap-3 justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <span className={`cc-chip ${chipClass} capitalize shrink-0`}>{post.post_type}</span>
+                        <h1 className="text-lg sm:text-xl font-semibold text-ink-900 truncate">
+                            {post.title}
+                        </h1>
+                    </div>
+                    <span className="cc-chip cc-chip-info">
+                        <UserCircleIcon className="h-3.5 w-3.5" /> {post.user.username}
+                    </span>
+                </header>
 
-// function fetchPost(id: string): {
-//     id: string;
-//     userId: string;
-//     found: boolean;
-//     title: string;
-//     location: string;
-//     date: Date;
-//     images: string[];
-//     description: string
-// } {
-//     return {
-//         id: id,
-//         userId: "Jakey",
-//         found: parseInt(id) % 2 === 0,
-//         title: "Lost my Lucario at location",
-//         location: "Sample Location",
-//         date: new Date(),
-//         images: [ "https://static.wikia.nocookie.net/p__/images/f/f0/Maylene_Lucario.png/revision/latest?cb=20180919005303&path-prefix=protagonist",
-//             "https://upload.wikimedia.org/wikipedia/en/9/95/Pok%C3%A9mon_Lucario_art.png",
-//             "https://upload.wikimedia.org/wikipedia/en/4/43/Pok%C3%A9mon_Mewtwo_art.png",
-//         ],
-//         description: `[Verse 1]
-// What do you have in store?
-// One life away, we can't explore
-// But I don't want to get in the way no more
-// 'Cause this the type of feeling you can't ignore...
-//
-// [Chorus]
-// I just love the way you've got me feeling
-// In love with the feeling
-// It's like, ooh
-// Take away the pain
-// Baby, I'm healing`,
-//     };
-// }
+                {/* Body */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 p-5 sm:p-7">
+                    <div className="flex items-center justify-center bg-surface-muted rounded-xl py-4">
+                        <GalleryImg images={post.images} preview={preview} />
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                        <dl className="space-y-2.5">
+                            {post.location && (
+                                <div className="flex items-start gap-2 text-sm">
+                                    <MapPinIcon className="h-4 w-4 text-ink-400 mt-0.5 shrink-0" />
+                                    <div>
+                                        <dt className="text-ink-500 text-xs font-medium uppercase tracking-wide">Location</dt>
+                                        <dd className="text-ink-900 font-medium">{post.location}</dd>
+                                    </div>
+                                </div>
+                            )}
+                            {post.event_date && (
+                                <div className="flex items-start gap-2 text-sm">
+                                    <CalendarIcon className="h-4 w-4 text-ink-400 mt-0.5 shrink-0" />
+                                    <div>
+                                        <dt className="text-ink-500 text-xs font-medium uppercase tracking-wide">Last seen</dt>
+                                        <dd className="text-ink-900 font-medium">{post.event_date}</dd>
+                                    </div>
+                                </div>
+                            )}
+                        </dl>
+
+                        {post.description && (
+                            <div>
+                                <h2 className="text-xs font-medium uppercase tracking-wide text-ink-500 mb-1.5">
+                                    Description
+                                </h2>
+                                <p className="text-ink-700 leading-relaxed whitespace-pre-line">
+                                    {post.description}
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="mt-2">
+                            <ChatButton recipientId={post.user.id} />
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+    );
+}
 
 export async function fetchPost(id: string, router: ReturnType<typeof useRouter>): Promise<Post | null> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const g = router;
-    const supabase = await createClient();
+    const _g = router;
+    const supabase = createClient();
     const { data, error } = await supabase
         .from('posts')
         .select(`
-      id,
-      post_type,
-      title,
-      description,
-      location,
-      event_date,
-      images,
-      created_at,
-      user:user_id!inner (
-         id,
-        username
-      )
-
-    `)
+            id,
+            post_type,
+            title,
+            description,
+            location,
+            event_date,
+            images,
+            created_at,
+            user:user_id!inner (
+                id,
+                username
+            )
+        `)
         .eq('id', id)
         .single();
-    console.log("📦 fetchPost result:", { data, error });
-    if (error) {
-        console.error("Error fetching post:", {
-            message: error?.message,
-            code: error?.code,
-            details: error?.details,
-        });
-        console.log(error);
-        return null;
-    }
-    if (!data) {
-        console.error("Post not found");
+
+    if (error || !data) {
+        if (error) console.error('Error fetching post:', error);
         return null;
     }
 
     return {
         ...data,
         user: Array.isArray(data.user) ? data.user[0] : data.user,
-        title: `${data.post_type.toUpperCase()} ${data.title}`
     } as Post;
-
-
-
-
 }
 
 export default Posting;

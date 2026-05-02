@@ -1,0 +1,14 @@
+include:
+  - supabase/docker-compose.yml
+
+services:
+  app:
+    build: .
+    container_name: campusclaims-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    depends_on:
+      - kong

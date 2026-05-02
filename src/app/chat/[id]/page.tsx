@@ -3,7 +3,7 @@
 import { useEffect, useState, FormEvent, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
-import { HiArrowLeft } from 'react-icons/hi';
+import { ArrowLeftIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { RealtimePostgresInsertPayload } from '@supabase/supabase-js';
 
 type Message = {
@@ -18,24 +18,22 @@ export default function Chat(props: { id?: string }) {
     const params = useParams();
     const convoId = props.id ?? (params?.id as string);
     const router = useRouter();
-
-    const readyButton = "rounded-full bg-blue-500 px-4 py-2 text-sm font-medium text-white opacity-80 cursor-pointer"
-    const unreadyButton = "rounded-full bg-blue-500 px-4 py-2 text-sm font-medium text-white opacity-30 cursor-not-allowed"
+    const isEmbedded = !!props.id;
 
     const [userId, setUserId] = useState<string | null>(null);
     const [companionId, setCompanionId] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [usernames, setUsernames] = useState<Record<string, string>>({});
     const [draft, setDraft] = useState('');
-    const [optimisticIds, setOptimisticIds] = useState<number[]>([]); // For duplicate prevention
+    const [optimisticIds, setOptimisticIds] = useState<number[]>([]);
 
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const handleSend = async (e?: FormEvent) => {
         if (e) e.preventDefault();
-        if (!draft || !userId || !convoId) return;
+        if (!draft.trim() || !userId || !convoId) return;
 
-        const supabase = await createClient();
+        const supabase = createClient();
         const content = draft.trim();
         setDraft('');
 
@@ -46,17 +44,17 @@ export default function Chat(props: { id?: string }) {
             .single();
 
         if (error) {
-            console.error("Error inserting message:", error);
+            console.error('Error inserting message:', error);
             return;
         }
 
         if (data) {
             setOptimisticIds((prev) => [...prev, data.id]);
-            setMessages((prev) => [...prev, data]); // Optimistically update
+            setMessages((prev) => [...prev, data]);
 
             await supabase
                 .from('conversations')
-                .update({ last_message_at: data.created_at }) // <-- sets timestamp of last message
+                .update({ last_message_at: data.created_at })
                 .eq('id', convoId);
         }
     };
@@ -83,10 +81,12 @@ export default function Chat(props: { id?: string }) {
                 .select('id, username')
                 .in('id', [user.id, other]);
             if (users) {
-                setUsernames(users.reduce<Record<string, string>>(
-                    (a, u) => ({ ...a, [u.id]: u.username }),
-                    {}
-                ));
+                setUsernames(
+                    users.reduce<Record<string, string>>(
+                        (a, u) => ({ ...a, [u.id]: u.username }),
+                        {}
+                    )
+                );
             }
 
             const { data: msgs } = await supabase
@@ -126,73 +126,124 @@ export default function Chat(props: { id?: string }) {
     }, [convoId, optimisticIds]);
 
     useEffect(() => {
-        scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     }, [messages]);
 
-    if (!convoId) return <div>Error: No ID provided</div>;
-    if (!companionId) return <div>Loading…</div>;
+    if (!convoId) {
+        return <div className="p-6 text-ink-500">Error: no conversation ID provided.</div>;
+    }
+
+    if (!companionId) {
+        return (
+            <div className="flex-1 flex items-center justify-center text-ink-500">
+                Loading conversation…
+            </div>
+        );
+    }
+
+    const companionName = usernames[companionId] ?? 'Unknown';
+    const companionInitial = companionName.charAt(0).toUpperCase();
+
+    const containerClass = isEmbedded
+        ? 'flex flex-col w-full h-full bg-surface rounded-xl border border-line overflow-hidden'
+        : 'mx-auto max-w-2xl w-full h-[calc(100dvh-64px-2rem)] my-4 flex flex-col bg-surface rounded-xl border border-line shadow-card overflow-hidden';
 
     return (
-        <div className="flex-1 bg-gradient-to-br from-sky-50 to-white flex justify-center items-center px-4 py-6">
-            <div className="w-full max-w-2xl bg-white rounded-xl shadow-md flex flex-col h-[90vh] border border-gray-100">
-            <header className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 rounded-t-xl">
+        <div className={containerClass}>
+            {/* Header */}
+            <header className="flex items-center gap-3 px-4 py-3 border-b border-line bg-white/70 backdrop-blur">
+                {!isEmbedded && (
                     <button
                         onClick={() => router.back()}
-                        className="rounded-full p-1 hover:bg-gray-100 focus:outline-none"
+                        aria-label="Back"
+                        className="grid place-items-center h-9 w-9 rounded-full text-ink-700 hover:bg-surface-muted"
                     >
-                        <HiArrowLeft className="h-5 w-5 text-gray-700" />
+                        <ArrowLeftIcon className="h-5 w-5" />
                     </button>
-                    <div className="h-8 w-8 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm font-medium uppercase">
-                        {usernames[companionId]?.charAt(0)}
+                )}
+                <div className="grid place-items-center h-9 w-9 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white text-sm font-semibold">
+                    {companionInitial}
+                </div>
+                <div className="min-w-0">
+                    <h2 className="text-sm font-semibold text-ink-900 truncate">{companionName}</h2>
+                    <p className="text-[11px] text-ink-500">Direct message</p>
+                </div>
+            </header>
+
+            {/* Messages */}
+            <main
+                ref={scrollRef}
+                className="flex-1 overflow-y-auto px-4 py-4 space-y-2 bg-surface-muted/40"
+            >
+                {messages.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-sm text-ink-500">
+                        Say hi to {companionName} — your messages will appear here.
                     </div>
-                    <h2 className="truncate text-base font-semibold text-gray-800">
-                        {usernames[companionId] ?? companionId}
-                    </h2>
-                </header>
+                ) : (
+                    messages.map((m, idx) => {
+                        const mine = m.sender_id === userId;
+                        const prev = messages[idx - 1];
+                        const showStamp =
+                            !prev ||
+                            (prev.created_at &&
+                                m.created_at &&
+                                Math.abs(
+                                    new Date(m.created_at).getTime() -
+                                        new Date(prev.created_at).getTime()
+                                ) > 5 * 60 * 1000);
 
-                <main ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-                    {messages.map((m) => (
-                        <div
-                            key={m.id}
-                            className={`max-w-xs px-4 py-2 rounded-2xl text-sm break-words shadow-sm ${
-                                m.sender_id === userId
-                                    ? 'ml-auto bg-blue-600 text-white'
-                                    : 'mr-auto bg-gray-100 text-gray-900'
-                            }`}
-                        >
-                            {m.content}
-                            <span className="block mt-1 text-[10px] text-gray-400">
-                                {m.created_at &&
-                                    new Date(m.created_at).toLocaleTimeString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    })}
-                            </span>
-                        </div>
-                    ))}
-                </main>
+                        return (
+                            <div key={m.id} className="flex flex-col">
+                                {showStamp && m.created_at && (
+                                    <p className="text-[11px] text-ink-400 text-center my-2">
+                                        {new Date(m.created_at).toLocaleString([], {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })}
+                                    </p>
+                                )}
+                                <div
+                                    className={[
+                                        'max-w-[75%] px-3.5 py-2 rounded-2xl text-sm leading-snug break-words shadow-sm',
+                                        mine
+                                            ? 'ml-auto bg-brand-600 text-white rounded-br-md'
+                                            : 'mr-auto bg-white text-ink-900 border border-line rounded-bl-md',
+                                    ].join(' ')}
+                                >
+                                    {m.content}
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </main>
 
-                <footer className="px-4 py-3 rounded-b-xl border-t border-gray-100">
-                    <form onSubmit={handleSend} className="flex items-center gap-2">
-                        <input
-                            className="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring"
-                            placeholder="Message…"
-                            value={draft}
-                            onChange={(e) => setDraft(e.target.value)}
-                            onKeyUp={(e) => {
-                                if (e.key !== 'Enter') return;
-                                handleSend();
-                            }}
-                        />
-                        <button
-                            type="submit"
-                            className={draft === '' ? unreadyButton : readyButton}
-                        >
-                            Send
-                        </button>
-                    </form>
-                </footer>
-            </div>
+            {/* Composer */}
+            <footer className="px-3 py-3 border-t border-line bg-white">
+                <form onSubmit={handleSend} className="flex items-center gap-2">
+                    <input
+                        className="cc-input flex-1 !h-11 rounded-full"
+                        placeholder="Type a message…"
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        onKeyUp={(e) => {
+                            if (e.key !== 'Enter') return;
+                            handleSend();
+                        }}
+                        aria-label="Message"
+                    />
+                    <button
+                        type="submit"
+                        disabled={draft.trim() === ''}
+                        aria-label="Send"
+                        className="grid place-items-center h-11 w-11 rounded-full bg-brand-600 text-white shadow-sm transition-colors hover:bg-brand-700 disabled:bg-brand-200 disabled:cursor-not-allowed"
+                    >
+                        <PaperAirplaneIcon className="h-5 w-5 -rotate-45" />
+                    </button>
+                </form>
+            </footer>
         </div>
     );
 }

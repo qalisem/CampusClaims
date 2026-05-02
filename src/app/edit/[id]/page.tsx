@@ -2,35 +2,131 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Filter from '@/components/Filter';
-import {useRouter} from "next/navigation";
-import {useParams} from "next/navigation";
+import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
-export default function CreatePostPage() {
+const CAMPUS_LOCATIONS = {
+    TMU: [
+        'Atrium on Bay',
+        'Architecture Building — Paul H. Cocker Gallery',
+        'Campus Store',
+        '114 Bond Street',
+        '111 Bond Street',
+        'Bell Trinity Square',
+        'Carlton Cinema',
+        'The Chang School of Continuing Education (Heaslip House)',
+        'Creative Innovation Studio',
+        'Civil Engineering Storage',
+        '101 Gerrard Street East',
+        'English Language Institute and International College (College Park)',
+        'Centre for Urban Innovation',
+        '147 Dalhousie Street',
+        'Daphne Cockwell Health Sciences Complex',
+        'Yonge-Dundas Square',
+        'George Vari Engineering and Computing Centre',
+        'Eric Palin Hall',
+        'School of Graphic Communications Management (Heidelberg Centre)',
+        'International Living / Learning Centre',
+        'School of Image Arts',
+        'The Image Centre',
+        'Jorgenson Hall',
+        'Kerr Hall East',
+        'Kerr Hall North',
+        'Kerr Hall South',
+        'Kerr Hall West',
+        'Library Building',
+        'Mattamy Athletic Centre',
+        'Merchandise Building',
+        'Civil Engineering Building (Monetary Times)',
+        'MaRS Building',
+        'Oakham House',
+        'O’Keefe House',
+        'Pitman Hall',
+        'Parking Garage',
+        'Podium',
+        '112 Bond Street',
+        'Recreation and Athletics Centre',
+        'Rogers Communications Centre',
+        'South Bond Building',
+        'Student Campus Centre',
+        'Sally Horsfall Eaton Centre for Studies in Community Health',
+        'School of Interior Design',
+        'Sheldon & Tracy Levy Student Learning Centre',
+        'St. Michael’s Hospital',
+        'Toronto Eaton Centre',
+        'Ted Rogers School of Management',
+        'Victoria Building',
+        'Yonge-Dundas Intersection',
+        '415 Yonge Street',
+    ],
+    UTM: [
+        'Communications, Culture & Technology Building',
+        'Deerfield Hall',
+        'William G. Davis Building',
+        'Hazel McCallion Academic Learning Centre & Library',
+        'Terrence Donnelly Health Sciences Complex',
+        'Instructional Centre',
+        'Kaneff Centre/Innovation Complex',
+        'Maanjiwe Nendamowinan',
+        'New Science Building',
+        'Academic Annex',
+        'Alumni House & Parking Office',
+        'Central Utilities Plant',
+        'Early Learning Child Care Centre',
+        'Erindale Studio Theatre',
+        'Forensic Anthropology Field School',
+        'Grounds Building',
+        'Lislehurst',
+        'Paleomagnetism Lab',
+        'Recreation, Athletics & Wellness Centre',
+        'Research Greenhouse',
+        'Student Centre',
+        'Erindale Hall',
+        'Leacock Lane Residence',
+        'MaGrath Valley Residence',
+        'McLuhan Court Residence',
+        'Oscar Peterson Hall',
+        'Putnam Place Residence',
+        'Roy Ivor Hall',
+        'Schreiberwood Residence',
+    ],
+} as const;
+
+const CATEGORIES = [
+    'Phone',
+    'Wallet',
+    'Keys',
+    'Laptop',
+    'Backpack',
+    'Water Bottle',
+    'Jewelry',
+    'Clothing',
+    'Other',
+];
+
+const SELECT_BG =
+    "appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 20 20%22><path stroke=%22%2364748b%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%221.5%22 d=%22m6 8 4 4 4-4%22/></svg>')] bg-[right_0.625rem_center] bg-no-repeat pr-9";
+
+export default function EditPostPage() {
     const params = useParams();
-    if (!params) {
-        throw new Error("Params are required");
-    }
-    const id = (params?.id as string);
-    if (!id) {
-        throw new Error("ID is required");
-    }
+    if (!params) throw new Error('Params are required');
+    const id = params?.id as string;
+    if (!id) throw new Error('ID is required');
+
     const [images, setImages] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
-    const [campus, setCampus] = useState('TMU');
+    const [campus, setCampus] = useState<'TMU' | 'UTM'>('TMU');
     const [category, setCategory] = useState('');
     const [customItem, setCustomItem] = useState('');
     const [location, setLocation] = useState('');
     const [desc, setDesc] = useState('');
-    const [filter, setFilter] = useState("lost");
+    const [filter, setFilter] = useState<'lost' | 'found'>('lost');
     const [date, setDate] = useState('');
     const [loading, setLoading] = useState(true);
-    const router = useRouter();
+    const [submitting, setSubmitting] = useState(false);
     const [ogImages, setOgImages] = useState<string[]>([]);
-
-    const handleFilterChange = (value: string) => {
-        setFilter(value); // update parent state
-    };
+    const router = useRouter();
 
     useEffect(() => {
         const fetchUserPosts = async () => {
@@ -40,161 +136,58 @@ export default function CreatePostPage() {
                 .select('*')
                 .eq('id', id)
                 .single();
+
             if (error || !data) {
-                alert("Error fetching post data");
+                alert('Error fetching post data');
                 router.push('/profile');
+                return;
             }
-            if (data) {
-                setCampus(data.campus ?? '');
-                if (categories.includes(data.title)) {
-                    setCategory(data.title ?? '');
-                    setCustomItem('');
-                } else {
-                    setCategory('Other');
-                    setCustomItem(data.title ?? '');
-                }
-                setLocation(data.location ?? '');
-                setDesc(data.description ?? '');
-                setDate(data.event_date ?? '');
-                setFilter(data.post_type ?? 'lost');
-                setOgImages(data.images ?? []);
 
-                const fetchedFiles: File[] = await Promise.all(
-                    (data.images || []).map(async (url: string, index: number) => {
-                        const res = await fetch(url);
-                        const blob = await res.blob();
-                        const name = `image_${index}.${blob.type.split('/')[1]}`;
-                        return new File([blob], name, { type: blob.type });
-                    })
-                );
-
-                setImages(fetchedFiles);
-                setPreviews(fetchedFiles.map(file => URL.createObjectURL(file)));
+            setCampus((data.campus as 'TMU' | 'UTM') ?? 'TMU');
+            if (CATEGORIES.includes(data.title)) {
+                setCategory(data.title ?? '');
+                setCustomItem('');
+            } else {
+                setCategory('Other');
+                setCustomItem(data.title ?? '');
             }
+            setLocation(data.location ?? '');
+            setDesc(data.description ?? '');
+            setDate(data.event_date ?? '');
+            setFilter((data.post_type as 'lost' | 'found') ?? 'lost');
+            setOgImages(data.images ?? []);
+
+            const fetchedFiles: File[] = await Promise.all(
+                (data.images || []).map(async (url: string, index: number) => {
+                    const res = await fetch(url);
+                    const blob = await res.blob();
+                    const name = `image_${index}.${blob.type.split('/')[1]}`;
+                    return new File([blob], name, { type: blob.type });
+                })
+            );
+
+            setImages(fetchedFiles);
+            setPreviews(fetchedFiles.map((file) => URL.createObjectURL(file)));
+            setLoading(false);
         };
         fetchUserPosts();
-        setLoading(false)
-        //eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
-
-    const campusLocations = {
-        TMU: [
-            'Atrium on Bay',
-            'Architecture Building — Paul H. Cocker Gallery',
-            'Campus Store',
-            '114 Bond Street',
-            '111 Bond Street',
-            'Bell Trinity Square',
-            'Carlton Cinema',
-            'The Chang School of Continuing Education (Heaslip House)',
-            'Creative Innovation Studio',
-            'Civil Engineering Storage',
-            '101 Gerrard Street East',
-            'English Language Institute and International College (College Park)',
-            'Centre for Urban Innovation',
-            '147 Dalhousie Street',
-            'Daphne Cockwell Health Sciences Complex',
-            'Yonge-Dundas Square',
-            'George Vari Engineering and Computing Centre',
-            'Eric Palin Hall',
-            'School of Graphic Communications Management (Heidelberg Centre)',
-            'International Living / Learning Centre',
-            'School of Image Arts',
-            'The Image Centre',
-            'Jorgenson Hall',
-            'Kerr Hall East',
-            'Kerr Hall North',
-            'Kerr Hall South',
-            'Kerr Hall West',
-            'Library Building',
-            'Mattamy Athletic Centre',
-            'Merchandise Building',
-            'Civil Engineering Building (Monetary Times)',
-            'MaRS Building',
-            'Oakham House',
-            'O’Keefe House',
-            'Pitman Hall',
-            'Parking Garage',
-            'Podium',
-            '112 Bond Street',
-            'Recreation and Athletics Centre',
-            'Rogers Communications Centre',
-            'South Bond Building',
-            'Student Campus Centre',
-            'Sally Horsfall Eaton Centre for Studies in Community Health',
-            'School of Interior Design',
-            'Sheldon & Tracy Levy Student Learning Centre',
-            'St. Michael’s Hospital',
-            'Toronto Eaton Centre',
-            'Ted Rogers School of Management',
-            'Victoria Building',
-            'Yonge-Dundas Intersection',
-            '415 Yonge Street'
-        ],
-        UTM: [
-            'Communications, Culture & Technology Building',
-            'Deerfield Hall',
-            'William G. Davis Building',
-            'Hazel McCallion Academic Learning Centre & Library',
-            'Terrence Donnelly Health Sciences Complex',
-            'Instructional Centre',
-            'Kaneff Centre/Innovation Complex',
-            'Maanjiwe Nendamowinan',
-            'New Science Building',
-            'Academic Annex',
-            'Alumni House & Parking Office',
-            'Central Utilities Plant',
-            'Early Learning Child Care Centre',
-            'Erindale Studio Theatre',
-            'Forensic Anthropology Field School',
-            'Grounds Building',
-            'Lislehurst',
-            'Paleomagnetism Lab',
-            'Recreation, Athletics & Wellness Centre',
-            'Research Greenhouse',
-            'Student Centre',
-            'Erindale Hall',
-            'Leacock Lane Residence',
-            'MaGrath Valley Residence',
-            'McLuhan Court Residence',
-            'Oscar Peterson Hall',
-            'Putnam Place Residence',
-            'Roy Ivor Hall',
-            'Schreiberwood Residence'
-        ]
-    };
-
-
-    const categories = [
-        'Phone', 'Wallet', 'Keys', 'Laptop', 'Backpack', 'Water Bottle',
-        'Jewelry', 'Clothing', 'Other'
-    ];
+    }, [id, router]);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFiles = Array.from(e.target.files || []);
-        const totalFiles = images.length + selectedFiles.length;
-
-        if (totalFiles > 3) {
-            const allowed = selectedFiles.slice(0, 3 - images.length);
-            setImages(prev => [...prev, ...allowed]);
-            setPreviews(prev => [...prev, ...allowed.map(file => URL.createObjectURL(file))]);
-        } else {
-            setImages(prev => [...prev, ...selectedFiles]);
-            setPreviews(prev => [...prev, ...selectedFiles.map(file => URL.createObjectURL(file))]);
-        }
+        const allowed = selectedFiles.slice(0, 3 - images.length);
+        setImages((prev) => [...prev, ...allowed]);
+        setPreviews((prev) => [...prev, ...allowed.map((file) => URL.createObjectURL(file))]);
     };
 
     const removeImage = (index: number) => {
-        const newImages = [...images];
-        const newPreviews = [...previews];
-        newImages.splice(index, 1);
-        newPreviews.splice(index, 1);
-        setImages(newImages);
-        setPreviews(newPreviews);
+        setImages((prev) => prev.filter((_, i) => i !== index));
+        setPreviews((prev) => prev.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSubmitting(true);
         const fd = new FormData();
         fd.append('id', id);
         fd.append('post_type', filter);
@@ -202,71 +195,74 @@ export default function CreatePostPage() {
         fd.append('title', category === 'Other' ? customItem : category);
         fd.append('location', location);
         fd.append('description', desc);
-        images.forEach((image) => {
-            fd.append('images', image);
-        });
+        images.forEach((image) => fd.append('images', image));
         fd.append('event_date', date);
-        ogImages.forEach(url => fd.append('og_images', url));
+        ogImages.forEach((url) => fd.append('og_images', url));
 
-        const data = await fetch(`/api/edit_post`, {
-            method: 'POST',
-            body: fd
-        });
+        const data = await fetch(`/api/edit_post`, { method: 'POST', body: fd });
         const res = await data.json();
-        if (res.success) {
-            alert('Post edited successfully!');
-            router.push('/profile'); //
+        setSubmitting(false);
 
+        if (res.success) {
+            router.push('/profile');
         } else {
             alert('Error editing post: ' + res.error);
             router.push('/profile');
-
         }
-
-
     };
 
     if (loading) {
-        return <div className="flex items-center justify-center h-screen">Loading...</div>;
+        return (
+            <div className="mx-auto max-w-2xl px-4 py-10">
+                <div className="cc-card p-8 animate-pulse space-y-3">
+                    <div className="h-5 w-48 bg-surface-muted rounded" />
+                    <div className="h-4 w-72 bg-surface-muted rounded" />
+                </div>
+            </div>
+        );
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-            <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-xl">
-                <h1 className="text-2xl font-semibold mb-4 text-center text-blue-600">
-                    Create a new Post
-                </h1>
+        <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8">
+            <header className="mb-6 text-center">
+                <h1 className="text-2xl sm:text-3xl font-bold text-ink-900">Edit your post</h1>
+                <p className="text-sm text-ink-500 mt-1">
+                    Update details so the right person can find it.
+                </p>
+            </header>
 
-                <div className="flex justify-center mb-4">
-                    <Filter onChange={handleFilterChange}/>
-
+            <div className="cc-card p-6 sm:p-7">
+                <div className="flex justify-center mb-6">
+                    <Filter onChange={(v) => setFilter(v)} initial={filter} />
                 </div>
 
-                <form className="space-y-4" onSubmit={handleSubmit}>
-                    {/* Campus Selection */}
+                <form className="space-y-5" onSubmit={handleSubmit}>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Campus</label>
+                        <label htmlFor="campus" className="cc-label">Campus</label>
                         <select
-                            className="w-full border border-gray-300 rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            id="campus"
+                            className={`cc-input ${SELECT_BG}`}
                             value={campus}
-                            onChange={(e) => setCampus(e.target.value)}
+                            onChange={(e) => setCampus(e.target.value as 'TMU' | 'UTM')}
                         >
                             <option value="TMU">Toronto Metropolitan University (TMU)</option>
                             <option value="UTM">University of Toronto Mississauga (UTM)</option>
                         </select>
                     </div>
 
-                    {/* Category */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Item Category</label>
+                        <label htmlFor="category" className="cc-label">Item category</label>
                         <select
-                            className="w-full border border-gray-300 rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            id="category"
+                            className={`cc-input ${SELECT_BG}`}
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
                         >
-                            <option value="">Select an item...</option>
-                            {categories.map((item) => (
-                                <option key={item} value={item}>{item}</option>
+                            <option value="">Select an item…</option>
+                            {CATEGORIES.map((item) => (
+                                <option key={item} value={item}>
+                                    {item}
+                                </option>
                             ))}
                         </select>
                         {category === 'Other' && (
@@ -275,50 +271,59 @@ export default function CreatePostPage() {
                                     type="text"
                                     value={customItem}
                                     onChange={(e) => setCustomItem(e.target.value)}
-                                    className="w-full mt-2 border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                    placeholder="Please specify item..."
+                                    className="cc-input mt-2"
+                                    placeholder="Please specify item…"
                                 />
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-ink-500 mt-1.5">
                                     Custom items may not appear in automated matching results.
                                 </p>
                             </>
                         )}
                     </div>
 
-                    {/* Location */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Location</label>
+                        <label htmlFor="location" className="cc-label">Location</label>
                         <select
-                            className="w-full border border-gray-300 rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            id="location"
+                            className={`cc-input ${SELECT_BG}`}
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
                         >
-                            <option value="">Select location...</option>
-                            {campusLocations[campus as 'TMU' | 'UTM'].map(loc => (
-                                <option key={loc} value={loc}>{loc}</option>
+                            <option value="">Select location…</option>
+                            {CAMPUS_LOCATIONS[campus].map((loc) => (
+                                <option key={loc} value={loc}>
+                                    {loc}
+                                </option>
                             ))}
                         </select>
                     </div>
 
-                    {/* Last Seen Date */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Last Seen Date</label>
+                        <label htmlFor="date" className="cc-label">Last seen date</label>
                         <input
-                            value={date}
+                            id="date"
                             type="date"
-                            className="w-full border border-gray-300 rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            value={date}
+                            className="cc-input"
                             onChange={(e) => setDate(e.target.value)}
                         />
                     </div>
 
-                    {/* Image Upload */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Upload Images (max 3)</label>
+                        <span className="cc-label">Photos <span className="font-normal text-ink-400">(max 3)</span></span>
                         <label
                             htmlFor="image-upload"
-                            className={`inline-block cursor-pointer border border-blue-800 text-blue-800 px-4 py-2 rounded-md hover:bg-blue-50 transition ${images.length >= 3 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl p-6 transition-colors cursor-pointer ${
+                                images.length >= 3
+                                    ? 'opacity-50 cursor-not-allowed border-line'
+                                    : 'border-line hover:border-brand-500 hover:bg-brand-50/40'
+                            }`}
                         >
-                            Choose Files
+                            <PhotoIcon className="h-7 w-7 text-ink-400" />
+                            <span className="text-sm font-medium text-ink-700">
+                                {images.length >= 3 ? 'Maximum reached' : 'Click to upload images'}
+                            </span>
+                            <span className="text-xs text-ink-500">PNG, JPG up to a few MB each</span>
                         </label>
                         <input
                             id="image-upload"
@@ -329,52 +334,58 @@ export default function CreatePostPage() {
                             onChange={handleImageChange}
                             disabled={images.length >= 3}
                         />
-                        {images.length >= 3 && (
-                            <p className="text-xs text-red-500 mt-1">Maximum of 3 images allowed.</p>
+
+                        {previews.length > 0 && (
+                            <div className="mt-3 grid grid-cols-3 gap-3">
+                                {previews.map((src, index) => (
+                                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-line">
+                                        <Image
+                                            src={src}
+                                            alt={`Preview ${index + 1}`}
+                                            fill
+                                            unoptimized
+                                            className="object-cover"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => removeImage(index)}
+                                            aria-label={`Remove image ${index + 1}`}
+                                            className="absolute top-1.5 right-1.5 grid place-items-center h-6 w-6 rounded-full bg-white/95 text-danger-600 shadow-sm hover:bg-danger-50"
+                                        >
+                                            <XMarkIcon className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                         )}
-                        <div className="mt-2 grid grid-cols-3 gap-2">
-                            {previews.map((src, index) => (
-                                <div key={index} className="relative">
-                                    <Image
-                                        src={src}
-                                        alt={`Preview ${index + 1}`}
-                                        width={100}
-                                        height={100}
-                                        unoptimized
-                                        className="object-cover rounded-md border"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => removeImage(index)}
-                                        className="absolute -top-2 -right-2 bg-white text-red-600 border border-red-300 rounded-full w-5 h-5 text-xs flex items-center justify-center"
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
                     </div>
 
-                    {/* Description */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Description</label>
+                        <label htmlFor="desc" className="cc-label">Description</label>
                         <textarea
-                            value={desc}
+                            id="desc"
                             rows={4}
-                            className="w-full border border-gray-300 rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            placeholder="Provide any identifying features or details..."
-                            onChange={(e) => {setDesc(e.target.value)}}
+                            className="cc-input"
+                            placeholder="Identifying details: color, brand, contents, scratches…"
+                            value={desc}
+                            onChange={(e) => setDesc(e.target.value)}
                         />
                     </div>
 
-                    {/* Submit */}
-                    <div className="text-center">
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => router.push('/profile')}
+                            className="cc-btn cc-btn-ghost !h-12 flex-1 text-base"
+                        >
+                            Cancel
+                        </button>
                         <button
                             type="submit"
-                            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-900 transition"
-
+                            disabled={submitting}
+                            className="cc-btn cc-btn-primary !h-12 flex-1 text-base"
                         >
-                            Submit Post
+                            {submitting ? 'Saving…' : 'Save changes'}
                         </button>
                     </div>
                 </form>
