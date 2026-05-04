@@ -2,6 +2,21 @@ include:
   - supabase/docker-compose.yml
 
 services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: campusclaims-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+      - kong
+
   app:
     build:
       context: .
@@ -17,3 +32,7 @@ services:
       - .env.local
     depends_on:
       - kong
+
+volumes:
+  caddy-data:
+  caddy-config:
