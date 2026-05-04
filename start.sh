@@ -11,6 +11,7 @@ if [ ! -f supabase/.env ]; then
   exit 1
 fi
 
+set -a; . ./.env.local; set +a
 docker compose up -d --build
 echo
 echo "CampusClaims is starting."
