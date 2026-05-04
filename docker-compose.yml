@@ -6,6 +6,10 @@ services:
     image: caddy:2-alpine
     container_name: campusclaims-caddy
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - campusclaims.duckdns.org
     ports:
       - "80:80"
       - "443:443"
