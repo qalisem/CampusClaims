@@ -1,0 +1,5 @@
+campusclaims.duckdns.org {
+    @supabase path /auth/* /rest/* /realtime/* /storage/* /pg/* /functions/* /graphql/*
+    reverse_proxy @supabase kong:8000
+    reverse_proxy app:3000
+}
