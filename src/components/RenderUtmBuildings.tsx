@@ -25,6 +25,7 @@ type Post = {
 const UtmMap = ({ posts }: { posts: Post[] }) => {
   const mapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
+  const clustererRef = useRef<MarkerClusterer | null>(null);
   const labelMarkersRef = useRef<google.maps.Marker[]>([]);
   const polygonRefs = useRef<google.maps.Polygon[]>([]);
   const [filter, setFilter] = useState<'lost' | 'found'>('lost');
@@ -34,18 +35,27 @@ const UtmMap = ({ posts }: { posts: Post[] }) => {
   });
 
   const plotMarkers = async () => {
-    if (!mapRef.current || !posts.length) return;
+    if (!mapRef.current) return;
 
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
+    clustererRef.current?.clearMarkers();
+
+    if (!posts.length) return;
 
     const coords = await fetch('/BuildingCoords.json').then((r) => r.json());
+    const utmCoords: Record<string, { lat: number; lng: number }> =
+      Object.fromEntries(
+        Object.entries(coords['UTM'] as Record<string, { lat: number; lng: number }>).map(
+          ([k, v]) => [k.trim().toLowerCase(), v],
+        ),
+      );
     const seenCoords: Record<string, number> = {};
 
     const markers = posts
       .filter((post) => post.post_type === filter)
       .map((post) => {
-        let pin = coords['UTM'][post.location];
+        let pin = utmCoords[(post.location ?? '').trim().toLowerCase()];
         if (!pin) return null;
 
         const key = `${pin.lat.toFixed(5)},${pin.lng.toFixed(5)}`;
@@ -87,7 +97,13 @@ const UtmMap = ({ posts }: { posts: Post[] }) => {
       })
       .filter(Boolean) as google.maps.Marker[];
 
-    new MarkerClusterer({ markers, map: mapRef.current });
+    markersRef.current = markers;
+
+    if (clustererRef.current) {
+      clustererRef.current.addMarkers(markers);
+    } else {
+      clustererRef.current = new MarkerClusterer({ markers, map: mapRef.current });
+    }
   };
 
   const drawBuildingLabels = async () => {

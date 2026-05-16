@@ -67,7 +67,7 @@ const CAMPUS_LOCATIONS = {
         'Terrence Donnelly Health Sciences Complex',
         'Instructional Centre',
         'Kaneff Centre/Innovation Complex',
-        'Maanjiwe Nendamowinan',
+        'Maanjiwe nendamowinan',
         'New Science Building',
         'Academic Annex',
         'Alumni House & Parking Office',
