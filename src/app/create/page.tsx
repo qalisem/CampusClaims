@@ -72,7 +72,6 @@ const CAMPUS_LOCATIONS = {
         'Academic Annex',
         'Alumni House & Parking Office',
         'Central Utilities Plant',
-        'Early Learning Child Care Centre',
         'Erindale Studio Theatre',
         'Forensic Anthropology Field School',
         'Grounds Building',
