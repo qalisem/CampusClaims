@@ -34,27 +34,22 @@ export default function SignUpPage() {
 
         setSubmitting(true);
         const supabase = createClient();
-        const { data, error: signUpErr } = await supabase.auth.signUp({ email, password });
+        const { data, error: signUpErr } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { data: { username: username.trim() } },
+        });
+
+        setSubmitting(false);
 
         if (signUpErr || !data?.user) {
-            setSubmitting(false);
             setError(signUpErr?.message ?? 'Could not sign you up. Please try again.');
             return;
         }
 
-        const { error: insertErr } = await supabase
-            .from('users')
-            .insert({ id: data.user.id, email, username })
-            .select();
-
-        setSubmitting(false);
-
-        if (insertErr) {
-            setError('Account created but profile setup failed. Please contact support.');
-            return;
-        }
-
-        alert('Sign-up successful! Please check your email for confirmation.');
+        // The public.users profile row is created automatically by the
+        // on_auth_user_created database trigger (see migration 00002).
+        alert('Sign-up successful!');
         router.push('/');
     };
 
