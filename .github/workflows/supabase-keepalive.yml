@@ -1,0 +1,31 @@
+name: Supabase Keep-Alive
+
+# Pings the Supabase REST API on a schedule so the free-tier project
+# never hits 7 days of inactivity and gets paused.
+on:
+  schedule:
+    # Every day at 12:00 UTC. GitHub cron is UTC-only.
+    - cron: "0 12 * * *"
+  # Allow manual runs from the Actions tab.
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/posts?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+          echo "HTTP status: $status"
+          # 2xx means the DB answered and is now marked active.
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "Keep-alive ping failed."
+            exit 1
+          fi
+          echo "Supabase is awake."
