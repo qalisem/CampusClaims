@@ -164,6 +164,36 @@ html, body {
   .cc-chip-lost  { background-color: var(--color-danger-50);  color: var(--color-danger-700); }
   .cc-chip-found { background-color: var(--color-success-50); color: var(--color-success-700); }
   .cc-chip-info  { background-color: var(--color-brand-50);   color: var(--color-brand-700); }
+
+  /* Gradient headline text */
+  .cc-gradient-text {
+    background-image: linear-gradient(100deg, #1d4ed8 0%, #4f46e5 45%, #0891b2 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Subtle hover lift for cards */
+  .cc-hover-lift { transition: transform .2s ease, box-shadow .2s ease; }
+  .cc-hover-lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-card-lg); }
+
+  /* Animated sheen for a primary CTA */
+  .cc-shimmer { position: relative; overflow: hidden; }
+  .cc-shimmer::after {
+    content: "";
+    position: absolute;
+    top: 0; left: -160%;
+    width: 55%; height: 100%;
+    background: linear-gradient(110deg, transparent, rgb(255 255 255 / 0.4), transparent);
+    transform: skewX(-20deg);
+    animation: cc-sheen 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+}
+
+@keyframes cc-sheen {
+  0%, 55% { left: -160%; }
+  100%    { left: 160%; }
 }
 
 /* Reduced motion */
