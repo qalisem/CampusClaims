@@ -7,6 +7,8 @@ import { createClient } from '@/utils/supabase/client';
 import SchoolSelector from '@/components/SchoolSelector';
 import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { Counter } from '@/components/ui/animated-counter';
+import { AuroraBackground } from '@/components/ui/aurora-background';
 
 type Post = {
     id: string;
@@ -48,15 +50,17 @@ export default function Home() {
 
     return (
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-10">
-            {/* Hero */}
-            <section className="text-center mb-6 sm:mb-8">
-                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-ink-900">
+            {/* Hero — wrapped in the 21st.dev Aurora Background */}
+            <AuroraBackground
+                className="text-center mb-6 sm:mb-8 rounded-3xl py-10 sm:py-14"
+            >
+                <h1 className="cc-gradient-text relative text-3xl sm:text-4xl font-bold tracking-tight px-4">
                     Find what&apos;s lost. Return what&apos;s found.
                 </h1>
-                <p className="mt-2 text-ink-500 max-w-xl mx-auto text-sm sm:text-base">
+                <p className="relative mt-2 text-ink-500 max-w-xl mx-auto text-sm sm:text-base px-4">
                     Browse the live campus map, post a missing item, and connect with whoever has it.
                 </p>
-            </section>
+            </AuroraBackground>
 
             {/* Selector */}
             <div className="mb-5">
@@ -66,10 +70,12 @@ export default function Home() {
             {/* Live counts */}
             <div className="mb-4 flex flex-wrap items-center justify-center gap-2 text-sm">
                 <span className="cc-chip cc-chip-lost">
-                    <span className="h-1.5 w-1.5 rounded-full bg-danger-600" /> {lostCount} lost
+                    <span className="h-1.5 w-1.5 rounded-full bg-danger-600" />
+                    <Counter end={lostCount} fontSize={12} className="!font-semibold text-current" /> lost
                 </span>
                 <span className="cc-chip cc-chip-found">
-                    <span className="h-1.5 w-1.5 rounded-full bg-success-600" /> {foundCount} found
+                    <span className="h-1.5 w-1.5 rounded-full bg-success-600" />
+                    <Counter end={foundCount} fontSize={12} className="!font-semibold text-current" /> found
                 </span>
                 <span className="text-ink-500">
                     on {CAMPUS_NAMES[campusIndex]}
@@ -77,13 +83,13 @@ export default function Home() {
             </div>
 
             {/* Map */}
-            <div className="cc-card overflow-hidden">{SelectedMap}</div>
+            <div className="cc-card cc-hover-lift overflow-hidden">{SelectedMap}</div>
 
             {/* CTA bar */}
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Link
                     href="/create"
-                    className="cc-btn cc-btn-primary w-full !h-12 text-base"
+                    className="cc-btn cc-btn-primary cc-shimmer w-full !h-12 text-base"
                 >
                     <PlusIcon className="h-5 w-5" />
                     Post a lost or found item
