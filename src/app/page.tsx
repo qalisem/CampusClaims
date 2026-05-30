@@ -8,7 +8,6 @@ import SchoolSelector from '@/components/SchoolSelector';
 import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { Counter } from '@/components/ui/animated-counter';
-import { AuroraBackground } from '@/components/ui/aurora-background';
 
 type Post = {
     id: string;
@@ -50,17 +49,15 @@ export default function Home() {
 
     return (
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-10">
-            {/* Hero — wrapped in the 21st.dev Aurora Background */}
-            <AuroraBackground
-                className="text-center mb-6 sm:mb-8 rounded-3xl py-10 sm:py-14"
-            >
-                <h1 className="cc-gradient-text relative text-3xl sm:text-4xl font-bold tracking-tight px-4">
+            {/* Hero (page-wide aurora lives behind everything via layout) */}
+            <section className="text-center mb-6 sm:mb-8 py-6 sm:py-10">
+                <h1 className="cc-gradient-text text-3xl sm:text-4xl font-bold tracking-tight">
                     Find what&apos;s lost. Return what&apos;s found.
                 </h1>
-                <p className="relative mt-2 text-ink-500 max-w-xl mx-auto text-sm sm:text-base px-4">
+                <p className="mt-2 text-ink-700 max-w-xl mx-auto text-sm sm:text-base">
                     Browse the live campus map, post a missing item, and connect with whoever has it.
                 </p>
-            </AuroraBackground>
+            </section>
 
             {/* Selector */}
             <div className="mb-5">
