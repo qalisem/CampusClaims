@@ -44,20 +44,20 @@ export default function PageAurora() {
       `}</style>
 
             <div
-                className="absolute top-0 left-0 h-[46vw] w-[46vw] rounded-full blur-[90px]"
-                style={orb('#60a5fa', 0.5, '', 'pa-1', '22s')}
+                className="absolute top-0 left-0 h-[42vw] w-[42vw] rounded-full blur-[80px]"
+                style={orb('#3b82f6', 0.62, '', 'pa-1', '13s')}
             />
             <div
-                className="absolute top-0 left-0 h-[40vw] w-[40vw] rounded-full blur-[90px]"
-                style={orb('#22d3ee', 0.45, '', 'pa-2', '27s')}
+                className="absolute top-0 left-0 h-[38vw] w-[38vw] rounded-full blur-[80px]"
+                style={orb('#06b6d4', 0.58, '', 'pa-2', '16s')}
             />
             <div
-                className="absolute top-0 left-0 h-[44vw] w-[44vw] rounded-full blur-[90px]"
-                style={orb('#a78bfa', 0.42, '', 'pa-3', '24s')}
+                className="absolute top-0 left-0 h-[40vw] w-[40vw] rounded-full blur-[80px]"
+                style={orb('#8b5cf6', 0.55, '', 'pa-3', '14s')}
             />
             <div
-                className="absolute top-0 left-0 h-[38vw] w-[38vw] rounded-full blur-[90px]"
-                style={orb('#818cf8', 0.4, '', 'pa-4', '30s')}
+                className="absolute top-0 left-0 h-[34vw] w-[34vw] rounded-full blur-[80px]"
+                style={orb('#6366f1', 0.5, '', 'pa-4', '18s')}
             />
         </div>
     );
