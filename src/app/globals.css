@@ -51,12 +51,19 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
 
-html, body {
+/* Base gradient lives on <html> only so it acts as the canvas. <body> must
+   stay transparent, otherwise its background would paint over the fixed
+   -z-10 PageAurora layer and hide the orbs entirely. */
+html {
   background:
     radial-gradient(1200px 600px at 8% -10%,  #dbeafe 0%, transparent 60%),
     radial-gradient(900px  500px at 100% 0%,  #ecfeff 0%, transparent 55%),
     linear-gradient(180deg, #f6f8fc 0%, #eef2f8 100%);
   background-attachment: fixed;
+}
+
+body {
+  background: transparent;
   color: var(--color-ink-900);
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
