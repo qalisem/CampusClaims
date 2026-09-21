@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
             },
             {
                 protocol: 'https',
-                hostname: 'qavhjoqptirrbopzjwud.supabase.co', // ✅ your Supabase storage
+                hostname: 'orbcvnmkjwlmgapjuxdk.supabase.co', // ✅ your Supabase storage
                 pathname: '/storage/v1/object/public/images/**',
             },
         ],
